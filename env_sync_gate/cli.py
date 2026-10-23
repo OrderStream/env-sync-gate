@@ -28,7 +28,7 @@ def main(argv=None):
     gen_parser.add_argument("--out", default=".env.example", help="Output file path")
 
     # license / donate command
-    subparsers.add_parser("license", help="View license tier and 0% fee crypto donation wallets")
+    subparsers.add_parser("license", help="View license tier and zero-fee crypto donation wallets")
 
     args = parser.parse_args(argv)
 
