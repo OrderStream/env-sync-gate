@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "env-sync-gate"
+version = "1.0.0"
+description = "Static scanner for process.env and os.environ that prevents missing environment variable crashes in production deployments."
+readme = "README.md"
+requires-python = ">=3.9"
+authors = [{ name = "OrderStream", email = "orderstream@users.noreply.github.com" }]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Topic :: System :: Systems Administration",
+]
+dependencies = []
+
+[project.scripts]
+env-sync-gate = "env_sync_gate.cli:main"
