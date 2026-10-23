@@ -38,25 +38,36 @@ class EnvSyncGate:
             return
 
         for node in ast.walk(tree):
-            # 1. os.environ["VAR"] or os.environ.get("VAR")
+            # 1. os.environ["VAR"] or environ["VAR"]
             if isinstance(node, ast.Subscript):
-                # os.environ["FOO"]
+                is_environ_sub = False
                 if isinstance(node.value, ast.Attribute) and node.value.attr == "environ":
-                    if isinstance(node.slice, ast.Constant) and isinstance(node.slice.value, str):
-                        self.usages.append(EnvVarUsage(
-                            name=node.slice.value,
-                            file_path=file_path,
-                            line=node.lineno,
-                            is_required=True,
-                            has_default=False
-                        ))
+                    is_environ_sub = True
+                elif isinstance(node.value, ast.Name) and node.value.id == "environ":
+                    is_environ_sub = True
+
+                if is_environ_sub and isinstance(node.slice, ast.Constant) and isinstance(node.slice.value, str):
+                    self.usages.append(EnvVarUsage(
+                        name=node.slice.value,
+                        file_path=file_path,
+                        line=node.lineno,
+                        is_required=True,
+                        has_default=False
+                    ))
             elif isinstance(node, ast.Call):
-                # os.getenv("FOO", "default") or os.environ.get("FOO")
+                # 2. os.getenv("FOO", "default"), getenv("FOO"), or (os.)environ.get("FOO")
                 is_getenv = False
-                if isinstance(node.func, ast.Attribute) and node.func.attr in {"getenv", "get"}:
+                if isinstance(node.func, ast.Name) and node.func.id == "getenv":
                     is_getenv = True
-                elif isinstance(node.func, ast.Name) and node.func.id == "getenv":
-                    is_getenv = True
+                elif isinstance(node.func, ast.Attribute):
+                    if node.func.attr == "getenv" and isinstance(node.func.value, ast.Name) and node.func.value.id == "os":
+                        is_getenv = True
+                    elif node.func.attr == "get":
+                        # Must be environ.get() or os.environ.get()
+                        if isinstance(node.func.value, ast.Name) and node.func.value.id == "environ":
+                            is_getenv = True
+                        elif isinstance(node.func.value, ast.Attribute) and node.func.value.attr == "environ":
+                            is_getenv = True
 
                 if is_getenv and node.args and isinstance(node.args[0], ast.Constant) and isinstance(node.args[0].value, str):
                     var_name = node.args[0].value

@@ -39,6 +39,24 @@ db_url = os.environ.get("DATABASE_URL")
 
     assert "DATABASE_URL" in names
 
+def test_dict_get_not_treated_as_env_and_direct_environ(tmp_path):
+    gate = EnvSyncGate()
+    code = """
+from os import environ
+normal_dict = {"foo": "bar"}
+val = normal_dict.get("foo") # Should NOT be treated as env var!
+direct_env = environ["DIRECT_SECRET_KEY"]
+"""
+    f = str(tmp_path / "dict_test.py")
+    gate.scan_python(f, code)
+
+    names = {u.name: u for u in gate.usages}
+    # normal_dict.get("foo") MUST NOT be detected
+    assert "foo" not in names
+    # DIRECT_SECRET_KEY MUST be detected
+    assert "DIRECT_SECRET_KEY" in names
+    assert names["DIRECT_SECRET_KEY"].is_required is True
+
 def test_ts_env_scanner(tmp_path):
     gate = EnvSyncGate()
     code = """
